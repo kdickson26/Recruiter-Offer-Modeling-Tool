@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Recruiter Offer Modeling Tool • TR Garage</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #38bdf8;
+      --accent2: #22c55e;
+      --grid: #1f2937;
+      --chip: #0b1220;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 80% -10%, #0b1220 0%, var(--bg) 50%);
+      color: var(--text);
+    }
+    .wrap { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+    header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    h1 { font-size: 26px; margin: 0; letter-spacing: 0.3px; }
+    .tag { font-size: 12px; color: var(--muted); background: var(--chip); padding: 6px 10px; border-radius: 999px; border: 1px solid #1f2a44; }
+    .grid { display: grid; grid-template-columns: 420px 1fr; gap: 16px; }
+    .card {
+      background: linear-gradient(180deg, #0f1629, var(--card));
+      border: 1px solid #1f2a44;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .card h2 { font-size: 16px; margin: 0 0 10px 0; color: #c7d2fe; letter-spacing: 0.2px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+    input[type="number"], input[type="date"], select {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid #22314f; background: #0b1220; color: var(--text);
+      outline: none;
+    }
+    input[type="checkbox"] { transform: scale(1.1); }
+    .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0b1220; border: 1px solid #1f2a44; color: var(--muted);
+      padding: 6px 10px; border-radius: 999px; font-size: 12px;
+    }
+    .flex { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .totals { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 10px; }
+    .kpi { background: #0b1220; border: 1px solid #1f2a44; border-radius: 12px; padding: 10px; }
+    .kpi .lbl { font-size: 11px; color: var(--muted); }
+    .kpi .val { font-size: 18px; margin-top: 2px; }
+    canvas { width: 100%; height: 320px; display: block; background: #0b1220; border: 1px solid #1f2a44; border-radius: 12px; }
+    .legend { display: flex; gap: 12px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+    .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+    .list { margin: 8px 0 0 0; padding: 0; list-style: none; }
+    .list li { padding: 8px 0; border-bottom: 1px solid #1f2a44; display: flex; justify-content: space-between; gap: 10px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .notice { font-size: 12px; color: var(--warn); margin-top: 6px; }
+    .footer { margin-top: 16px; font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+    .btn {
+      background: linear-gradient(180deg, #0ea5e9, #0284c7);
+      border: none; color: white; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 600;
+    }
+    .btn:active { transform: translateY(1px); }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Recruiter Offer Modeling Tool</h1>
+      <span class="tag">v1 • local prototype</span>
+    </header>
+
+    <div class="grid">
+      <!-- Inputs -->
+      <section class="card">
+        <h2>Inputs</h2>
+
+        <div class="row">
+          <div>
+            <label>Job Profile (demo)</label>
+            <select id="jobProfile">
+              <option value="custom">Custom</option>
+              <option value='{"title":"IC09 Senior Staff Engineer","base":220000}'>IC09 Senior Staff Engineer, Base 220,000</option>
+              <option value='{"title":"M4 Director","base":250000}'>M4 Director, Base 250,000</option>
+            </select>
+            <div class="hint">Pick one demo profile or use Custom and enter base manually.</div>
+          </div>
+          <div>
+            <label>Base Salary, USD</label>
+            <input type="number" id="base" placeholder="e.g. 220000" min="0" step="1000" />
+            <div class="hint">Annualized base. No bonus in v1.</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>Estimated Start Date</label>
+            <input type="date" id="startDate" />
+            <div class="hint">Used for vest commencement and yearly buckets.</div>
+          </div>
+          <div>
+            <label>Equity Grant Value, USD</label>
+            <input type="number" id="grantValue" placeholder="e.g. 400000" min="0" step="1000" />
+            <div class="hint">Value at grant approval. Units conversion is out of scope for v1.</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>Equity Grant Type</label>
+            <select id="grantType">
+              <option value="standard4">Standard RSU, 4 yr, 1 yr cliff, quarterly equal after</option>
+              <option value="front40302010">Front-loaded RSU, 40,30,20,10 by year, 1 yr cliff</option>
+            </select>
+            <div class="hint">Both assume board approval and commencement rules from TR Garage.</div>
+          </div>
+          <div>
+            <label class="pill"><input type="checkbox" id="useTRDates" checked /> Use TR Garage date rules</label>
+            <div class="hint">Board approvals: Feb 1, May 1, Aug 1, Nov 1. Commencement: Feb 25, May 25, Aug 25, Nov 25.</div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <button class="btn" id="run">Model Offer</button>
+          <span class="hint">All calculations run in your browser. Nothing is saved or sent.</span>
+        </div>
+        <div id="dateNote" class="notice" style="display:none;"></div>
+      </section>
+
+      <!-- Outputs -->
+      <section class="card">
+        <h2>4 Year Total Compensation</h2>
+        <div class="totals">
+          <div class="kpi"><div class="lbl">Year 1 Total</div><div class="val mono" id="y1">$0</div></div>
+          <div class="kpi"><div class="lbl">Year 2 Total</div><div class="val mono" id="y2">$0</div></div>
+          <div class="kpi"><div class="lbl">Year 3 Total</div><div class="val mono" id="y3">$0</div></div>
+        </div>
+        <div class="totals" style="margin-top:10px;">
+          <div class="kpi"><div class="lbl">Year 4 Total</div><div class="val mono" id="y4">$0</div></div>
+          <div class="kpi"><div class="lbl">4 Year Cumulative</div><div class="val mono" id="cum">$0</div></div>
+          <div class="kpi"><div class="lbl">Grant Approval • Vest Commence</div><div class="val mono" id="dates">—</div></div>
+        </div>
+
+        <canvas id="chart" width="900" height="320"></canvas>
+        <div class="legend">
+          <span><span class="dot" style="background: var(--accent2)"></span> Base</span>
+          <span><span class="dot" style="background: var(--accent)"></span> Equity Recognized</span>
+        </div>
+
+        <h2 style="margin-top:16px;">Vesting Timeline</h2>
+        <ul id="timeline" class="list"></ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Utility ----------
+    const fmt = n => n.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+    const addDays = (d, days) => { const x = new Date(d); x.setDate(x.getDate() + days); return x; };
+    const clone = d => new Date(d.getTime());
+
+    // TR Garage board approvals and vest commencements
+    const boardMonths = [1, 4, 8, 11]; // Feb, May, Aug, Nov on 1st
+    const commenceMonths = [1, 4, 8, 11]; // Feb, May, Aug, Nov on 25th
+
+    function nextBoardApproval(fromDate) {
+      const y = fromDate.getFullYear();
+      const candidates = [
+        new Date(y, 1, 1), new Date(y, 4, 1), new Date(y, 7, 1), new Date(y, 10, 1),
+        new Date(y+1, 1, 1), new Date(y+1, 4, 1), new Date(y+1, 7, 1), new Date(y+1, 10, 1)
+      ];
+      return candidates.find(d => d >= fromDate);
+    }
+    function nextCommencement(fromDate) {
+      const y = fromDate.getFullYear();
+      const candidates = [
+        new Date(y, 1, 25), new Date(y, 4, 25), new Date(y, 7, 25), new Date(y, 10, 25),
+        new Date(y+1, 1, 25), new Date(y+1, 4, 25), new Date(y+1, 7, 25), new Date(y+1, 10, 25)
+      ];
+      return candidates.find(d => d >= fromDate);
+    }
+
+    // Vesting engines return array of {date, value}
+    function vestStandard4Years(grantValue, commence) {
+      // 1 year cliff of 25 percent, then equal quarterly vests for remaining 75 percent over next 12 quarters
+      const events = [];
+      const year1 = grantValue * 0.25;
+      const cliff = addDays(new Date(commence.getFullYear()+1, commence.getMonth(), commence.getDate()), 0);
+      events.push({ date: cliff, value: year1 });
+
+      const remaining = grantValue - year1;
+      const qVal = remaining / 12;
+      let d = clone(cliff);
+      for (let i = 1; i <= 12; i++) {
+        d = new Date(d.getFullYear(), d.getMonth()+3, d.getDate());
+        events.push({ date: d, value: qVal });
+      }
+      return events;
+    }
+
+    function vestFrontLoaded40302010(grantValue, commence) {
+      // 1 year cliff, then annual buckets 40,30,20,10 paid as equal quarterly installments each year
+      const events = [];
+      const schedule = [0.40, 0.30, 0.20, 0.10];
+      let yearStart = addDays(new Date(commence.getFullYear()+1, commence.getMonth(), commence.getDate()), 0); // cliff date is start of year 1 recognition
+      for (let y = 0; y < 4; y++) {
+        const annual = grantValue * schedule[y];
+        const qVal = annual / 4;
+        let d = clone(yearStart);
+        for (let q = 0; q < 4; q++) {
+          if (y === 0 && q === 0) {
+            // first vest occurs at the cliff date
+            events.push({ date: clone(d), value: qVal });
+          } else {
+            d = new Date(d.getFullYear(), d.getMonth()+3, d.getDate());
+            events.push({ date: clone(d), value: qVal });
+          }
+        }
+        yearStart = new Date(yearStart.getFullYear()+1, yearStart.getMonth(), yearStart.getDate());
+      }
+      return events;
+    }
+
+    // Year bucketing helper for chart
+    function bucketByCalendarYear(startDate, base, vestEvents) {
+      // Four full years from startDate anniversary windows
+      const y1End = new Date(startDate.getFullYear()+1, startDate.getMonth(), startDate.getDate());
+      const y2End = new Date(startDate.getFullYear()+2, startDate.getMonth(), startDate.getDate());
+      const y3End = new Date(startDate.getFullYear()+3, startDate.getMonth(), startDate.getDate());
+      const y4End = new Date(startDate.getFullYear()+4, startDate.getMonth(), startDate.getDate());
+
+      // Base is annualized, prorated only if startDate not aligned to anniversary windows. For simplicity in v1, assume full annual base each year.
+      const baseByYear = [base, base, base, base];
+
+      const equityByYear = [0,0,0,0];
+      vestEvents.forEach(v => {
+        const d = v.date;
+        if (d < y1End) equityByYear[0] += v.value;
+        else if (d < y2End) equityByYear[1] += v.value;
+        else if (d < y3End) equityByYear[2] += v.value;
+        else if (d < y4End) equityByYear[3] += v.value;
+      });
+
+      return { baseByYear, equityByYear };
+    }
+
+    // Simple stacked bar chart with canvas
+    function drawChart(canvas, baseByYear, equityByYear) {
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+
+      // grid
+      ctx.fillStyle = "#0b1220";
+      ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle = "#1f2a44";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const y = 20 + i * ((H-40)/5);
+        ctx.beginPath(); ctx.moveTo(50, y); ctx.lineTo(W-20, y); ctx.stroke();
+      }
+
+      const years = ["Y1","Y2","Y3","Y4"];
+      const colW = (W - 90) / 4;
+      const maxVal = Math.max(...baseByYear.map((b,i)=>b+equityByYear[i]));
+      const scale = (H - 60) / (maxVal || 1);
+
+      for (let i = 0; i < 4; i++) {
+        const x = 60 + i * colW + 12;
+        // Base bar
+        const baseH = baseByYear[i] * scale;
+        const eqH = equityByYear[i] * scale;
+
+        // equity segment
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        ctx.fillRect(x, H-30 - eqH, colW-24, eqH);
+
+        // base segment
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
+        ctx.fillRect(x, H-30 - eqH - baseH, colW-24, baseH);
+
+        // labels
+        ctx.fillStyle = "#cbd5e1";
+        ctx.font = "12px ui-sans-serif, system-ui, -apple-system";
+        ctx.fillText(years[i], x + (colW-24)/2 - 8, H-12);
+
+        const total = baseByYear[i] + equityByYear[i];
+        ctx.fillStyle = "#e5e7eb";
+        ctx.font = "11px ui-sans-serif, system-ui, -apple-system";
+        ctx.fillText(fmt(total), x, Math.max(H-38 - eqH - baseH, 14));
+      }
+    }
+
+    // Wiring
+    const el = id => document.getElementById(id);
+    const jobProfile = el("jobProfile");
+    const base = el("base");
+    const startDate = el("startDate");
+    const grantValue = el("grantValue");
+    const grantType = el("grantType");
+    const run = el("run");
+    const chart = el("chart");
+    const y1 = el("y1"), y2 = el("y2"), y3 = el("y3"), y4 = el("y4"), cum = el("cum"), dates = el("dates");
+    const timeline = el("timeline");
+    const dateNote = el("dateNote");
+    const useTRDates = el("useTRDates");
+
+    // Defaults for quick demo
+    (function seedDefaults(){
+      const today = new Date();
+      startDate.valueAsDate = today;
+      grantValue.value = 400000;
+    })();
+
+    jobProfile.addEventListener("change", () => {
+      if (jobProfile.value === "custom") return;
+      try {
+        const p = JSON.parse(jobProfile.value);
+        base.value = p.base;
+      } catch {}
+    });
+
+    run.addEventListener("click", () => {
+      const b = Number(base.value || 0);
+      const gv = Number(grantValue.value || 0);
+      const sd = startDate.valueAsDate || new Date();
+      const gt = grantType.value;
+
+      if (!b || !gv) {
+        dateNote.style.display = "block";
+        dateNote.textContent = "Enter a valid base salary and equity grant value.";
+        return;
+      } else {
+        dateNote.style.display = "none";
+      }
+
+      // Board approval and commencement logic
+      let board = nextBoardApproval(sd);
+      let commence = nextCommencement(sd);
+      if (!useTRDates.checked) {
+        // if unchecked, assume board approval and commencement equal to start date
+        board = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate());
+        commence = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate());
+      }
+
+      dates.textContent = board.toLocaleDateString() + " • " + commence.toLocaleDateString();
+
+      // Build vest schedule
+      let events = [];
+      if (gt === "standard4") events = vestStandard4Years(gv, commence);
+      if (gt === "front40302010") events = vestFrontLoaded40302010(gv, commence);
+
+      // Sort by date, bucket into 4 years
+      events.sort((a,b) => a.date - b.date);
+      const { baseByYear, equityByYear } = bucketByCalendarYear(sd, b, events);
+
+      // KPIs
+      y1.textContent = fmt(baseByYear[0] + equityByYear[0]);
+      y2.textContent = fmt(baseByYear[1] + equityByYear[1]);
+      y3.textContent = fmt(baseByYear[2] + equityByYear[2]);
+      y4.textContent = fmt(baseByYear[3] + equityByYear[3]);
+      const total = baseByYear.reduce((s,x)=>s+x,0) + equityByYear.reduce((s,x)=>s+x,0);
+      cum.textContent = fmt(total);
+
+      // Chart
+      drawChart(chart, baseByYear, equityByYear);
+
+      // Timeline list
+      timeline.innerHTML = "";
+      events.forEach(v => {
+        const li = document.createElement("li");
+        const left = document.createElement("span");
+        const right = document.createElement("span");
+        left.textContent = v.date.toLocaleDateString();
+        right.textContent = fmt(v.value);
+        li.appendChild(left); li.appendChild(right);
+        timeline.appendChild(li);
+      });
+    });
+
+    // Run once for initial view
+    run.click();
+  </script>
+</body>
+</html>
